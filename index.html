@@ -3,192 +3,223 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Aesthetic To-Do List</title>
-
+    <title>To-Do App | By Capruk - University</title>
+    
+    <!-- Preload resources -->
+    <link rel="preload" href="assets/background.jpg" as="image">
+    <link rel="preload" href="css/style.css" as="style">
+    <link rel="preload" href="js/script.js" as="script">
+    <link rel="shortcut icon" href="assets/キツネ.png" type="image/x-icon">
+    
+    <!-- Defer non-critical fonts -->
+    <link rel="stylesheet" href="css/style.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="css/style.css"></noscript>
+    
+    <!-- Async load fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"/>
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    
+    <!-- Defer font-awesome -->
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <link rel="stylesheet" href="css/style.css" />
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      media="print"
+      onload="this.media='all'"
+    />
   </head>
 
   <body>
-    <!-- Background Elements -->
-    <div class="bg-element bg-1">🎧</div>
-    <div class="bg-element bg-2">📝</div>
-    <div class="bg-element bg-3">✨</div>
-    <div class="bg-element bg-4">🎯</div>
+    <!-- Background Elements (diminimalisir untuk performa) -->
+    <div class="bg-elements">
+      <div class="bg-element bg-1">🎧</div>
+      <div class="bg-element bg-2">📝</div>
+    </div>
 
     <!-- Notification -->
-    <div class="notification" id="notification">
+    <div class="notification" id="notification" aria-live="polite">
       <i class="fas fa-check-circle"></i>
       <span id="notificationText">Welcome back!</span>
     </div>
 
-    <!-- Auth Container (Initially visible) -->
+    <!-- Auth Container -->
     <div class="auth-container" id="authContainer">
       <div class="auth-box" id="loginBox">
         <div class="auth-header">
           <div class="auth-logo">
-            <i class="fas fa-tasks"></i>
-            <span>To-Do App</span>
+            <i class="fas fa-tasks" aria-hidden="true" ></i>
+            <span class="awal">To-Do App - キツネ</span>
           </div>
           <p class="auth-subtitle">By Yokai - Capruk UNIVERSITY</p>
         </div>
 
         <form class="auth-form" id="loginForm">
           <div class="form-group">
-            <i class="fas fa-user form-icon"></i>
+            <label for="loginUsername" class="sr-only">Username</label>
+            <i class="fas fa-user form-icon" aria-hidden="true"></i>
             <input
               type="text"
               class="form-input"
               id="loginUsername"
               placeholder="Username"
               required
+              autocomplete="username"
             />
           </div>
           <div class="form-group">
-            <i class="fas fa-lock form-icon"></i>
+            <label for="loginPassword" class="sr-only">Password</label>
+            <i class="fas fa-lock form-icon" aria-hidden="true"></i>
             <input
               type="password"
               class="form-input"
               id="loginPassword"
               placeholder="Password"
               required
+              autocomplete="current-password"
             />
             <button
               type="button"
               class="toggle-password"
               id="toggleLoginPassword"
+              aria-label="Toggle password visibility"
             >
-              <i class="fas fa-eye"></i>
+              <i class="fas fa-eye" aria-hidden="true"></i>
             </button>
           </div>
           <button type="submit" class="auth-btn">
-            <i class="fas fa-sign-in-alt"></i> Login
+            <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Login
           </button>
         </form>
 
         <div class="auth-switch">
           <p>
             Buat akun disini!
-            <a class="switch-link" onclick="showRegister()">Daftar disini</a>
+            <a class="switch-link" onclick="showRegister()" role="button" tabindex="0">Daftar disini</a>
           </p>
         </div>
       </div>
 
-      <div class="auth-box" id="registerBox" style="display: none">
+      <div class="auth-box" id="registerBox" hidden>
         <div class="auth-header">
           <div class="auth-logo">
-            <i class="fas fa-user-plus"></i>
+            <i class="fas fa-user-plus" aria-hidden="true"></i>
             <span>Buat akun</span>
           </div>
-          <p class="auth-subtitle">Gabung Capruk - UNIVERSITY</p><br>
-          <p style="padding: 5px;">Warning!!</p>
-          <p class="auth-subtitle" style="font-size: 14px;">Btw ini nyimpen di Local Storage. Jadi kalo kamu Reset device atau hapus data browser, bakalan kehapus yah!</p>
+          <p class="auth-subtitle">Gabung Capruk - UNIVERSITY</p>
+          <p class="warning-text">Warning!!</p>
+          <p class="auth-subtitle warning-sub">Btw ini nyimpen di Local Storage. Jadi kalo kamu Reset device atau hapus data browser, bakalan kehapus yah!</p>
         </div>
 
         <form class="auth-form" id="registerForm">
           <div class="form-group">
-            <i class="fas fa-user form-icon"></i>
+            <label for="registerUsername" class="sr-only">Choose username</label>
+            <i class="fas fa-user form-icon" aria-hidden="true"></i>
             <input
               type="text"
               class="form-input"
               id="registerUsername"
               placeholder="Choose username"
               required
+              autocomplete="username"
             />
           </div>
           <div class="form-group">
-            <i class="fas fa-envelope form-icon"></i>
+            <label for="registerEmail" class="sr-only">Email (optional)</label>
+            <i class="fas fa-envelope form-icon" aria-hidden="true"></i>
             <input
               type="email"
               class="form-input"
               id="registerEmail"
               placeholder="Email (optional)"
+              autocomplete="email"
             />
           </div>
           <div class="form-group">
-            <i class="fas fa-lock form-icon"></i>
+            <label for="registerPassword" class="sr-only">Create password</label>
+            <i class="fas fa-lock form-icon" aria-hidden="true"></i>
             <input
               type="password"
               class="form-input"
               id="registerPassword"
               placeholder="Create password"
               required
-              oninput="checkPasswordStrength(this.value)"
+              autocomplete="new-password"
             />
             <button
               type="button"
               class="toggle-password"
               id="toggleRegisterPassword"
+              aria-label="Toggle password visibility"
             >
-              <i class="fas fa-eye"></i>
+              <i class="fas fa-eye" aria-hidden="true"></i>
             </button>
           </div>
           <div class="form-group">
-            <i class="fas fa-lock form-icon"></i>
+            <label for="registerConfirm" class="sr-only">Confirm password</label>
+            <i class="fas fa-lock form-icon" aria-hidden="true"></i>
             <input
               type="password"
               class="form-input"
               id="registerConfirm"
               placeholder="Confirm password"
               required
+              autocomplete="new-password"
             />
             <button
               type="button"
               class="toggle-password"
               id="toggleRegisterConfirm"
+              aria-label="Toggle password visibility"
             >
-              <i class="fas fa-eye"></i>
+              <i class="fas fa-eye" aria-hidden="true"></i>
             </button>
           </div>
           <button type="submit" class="auth-btn">
-            <i class="fas fa-user-plus"></i> Buat akun
+            <i class="fas fa-user-plus" aria-hidden="true"></i> Buat akun
           </button>
         </form>
 
         <div class="auth-switch">
           <p>
             Kalo kamu punya akun
-            <a class="switch-link" onclick="showLogin()">Login disini</a>
+            <a class="switch-link" onclick="showLogin()" role="button" tabindex="0">Login disini</a>
           </p>
         </div>
       </div>
     </div>
 
-    <!-- App Container (Initially hidden) -->
-    <div class="app-container" id="appContainer">
+    <!-- App Container -->
+    <div class="app-container" id="appContainer" hidden>
       <div class="container">
-        <!-- User Header -->
         <div class="user-header">
           <div class="user-info">
-            <div class="user-avatar" id="userAvatar">A</div>
+            <div class="user-avatar" id="userAvatar" aria-hidden="true">A</div>
             <div class="user-details">
               <h2 id="userGreeting">Welkam le, User!</h2>
               <p id="userStats">0 tasks • 0 completed</p>
             </div>
           </div>
-          <button class="logout-btn" onclick="logout()">
-            <i class="fas fa-sign-out-alt"></i> Logout
+          <button class="logout-btn" onclick="logout()" aria-label="Logout">
+            <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout
           </button>
         </div>
 
         <header>
-          <h1><i></i>To-Do App</h1>
+          <h1><i aria-hidden="true"></i>To-Do App - キツネ</h1>
           <p class="subtitle">Simpan Jadwal kamu disini !</p>
         </header>
 
-        <!-- Music Player - UPGRADED! -->
+        <!-- Music Player -->
         <div class="music-player">
           <div class="music-content">
             <div class="music-header">
               <div class="music-title">
-                <div class="music-icon">
+                <div class="music-icon" aria-hidden="true">
                   <i class="fas fa-music"></i>
                 </div>
                 <div class="music-info">
@@ -196,11 +227,7 @@
                   <p>Napking Teman • Lofi Vibes</p>
                 </div>
               </div>
-              <div class="visualizer">
-                <div class="visualizer-bar"></div>
-                <div class="visualizer-bar"></div>
-                <div class="visualizer-bar"></div>
-                <div class="visualizer-bar"></div>
+              <div class="visualizer" aria-hidden="true">
                 <div class="visualizer-bar"></div>
                 <div class="visualizer-bar"></div>
                 <div class="visualizer-bar"></div>
@@ -208,14 +235,15 @@
             </div>
 
             <div class="player-controls">
-              <button class="play-btn" id="playBtn" onclick="toggleMusic()">
-                <i class="fas fa-play"></i>
+              <button class="play-btn" id="playBtn" onclick="toggleMusic()" aria-label="Play/pause music">
+                <i class="fas fa-play" aria-hidden="true"></i>
               </button>
               <div class="volume-control">
-                <div class="volume-icon">
+                <div class="volume-icon" aria-hidden="true">
                   <i class="fas fa-volume-up"></i>
                 </div>
                 <div class="volume-slider-container">
+                  <label for="volumeSlider" class="sr-only">Volume control</label>
                   <input
                     type="range"
                     min="0"
@@ -223,25 +251,23 @@
                     value="50"
                     class="volume-slider"
                     id="volumeSlider"
-                    oninput="changeVolume(this.value)"
+                    aria-label="Volume level"
                   />
                 </div>
-                <span id="volumeText">50%</span>
+                <span id="volumeText" aria-live="polite">50%</span>
               </div>
               <span class="music-status">
-                <i class="fas fa-music"></i>
+                <i class="fas fa-music" aria-hidden="true"></i>
                 <span id="musicStatus">Ready to play</span>
               </span>
             </div>
           </div>
 
-          <!-- Music Background dengan gambar aesthetic -->
-          <audio id="bgMusic" loop>
+          <audio id="bgMusic" loop preload="none">
             <source
               src="assets/Napking Teman Official Music Video.mp3"
               type="audio/mpeg"
             />
-            Your browser does not support the audio element.
           </audio>
         </div>
 
@@ -250,62 +276,60 @@
           <div class="stat-card">
             <div class="stat-number" id="totalCount">0</div>
             <div class="stat-label">
-              <i class="fas fa-tasks"></i> Total Tasks
+              <i class="fas fa-tasks" aria-hidden="true"></i> Total Tasks
             </div>
           </div>
           <div class="stat-card">
             <div class="stat-number" id="activeCount">0</div>
-            <div class="stat-label"><i class="fas fa-clock"></i> Active</div>
+            <div class="stat-label"><i class="fas fa-clock" aria-hidden="true"></i> Active</div>
           </div>
           <div class="stat-card">
             <div class="stat-number" id="completedCount">0</div>
             <div class="stat-label">
-              <i class="fas fa-check-circle"></i> Completed
+              <i class="fas fa-check-circle" aria-hidden="true"></i> Completed
             </div>
           </div>
           <div class="stat-card">
             <div class="stat-number" id="importantCount">0</div>
-            <div class="stat-label"><i class="fas fa-star"></i> Important</div>
+            <div class="stat-label"><i class="fas fa-star" aria-hidden="true"></i> Important</div>
           </div>
         </div>
 
         <!-- Main Card -->
         <div class="main-card">
-          <!-- Input Section -->
           <div class="input-section">
             <div class="input-wrapper">
+              <label for="todoInput" class="sr-only">Add a new task</label>
               <input
                 type="text"
                 id="todoInput"
                 placeholder="Add a new task..."
-                onkeypress="handleKeyPress(event)"
+                aria-label="Add a new task"
               />
-              <button class="add-btn" onclick="addTodo()">
-                <i class="fas fa-plus"></i> Add Task
+              <button class="add-btn" onclick="addTodo()" aria-label="Add task">
+                <i class="fas fa-plus" aria-hidden="true"></i> Add Task
               </button>
             </div>
           </div>
 
-          <!-- Filters -->
-          <div class="filters">
-            <button class="filter-btn active" onclick="filterTodos('all')">
-              <i class="fas fa-layer-group"></i> All
+          <div class="filters" role="tablist">
+            <button class="filter-btn active" onclick="filterTodos('all')" role="tab" aria-selected="true">
+              <i class="fas fa-layer-group" aria-hidden="true"></i> All
             </button>
-            <button class="filter-btn" onclick="filterTodos('active')">
-              <i class="fas fa-play-circle"></i> Active
+            <button class="filter-btn" onclick="filterTodos('active')" role="tab" aria-selected="false">
+              <i class="fas fa-play-circle" aria-hidden="true"></i> Active
             </button>
-            <button class="filter-btn" onclick="filterTodos('completed')">
-              <i class="fas fa-check-circle"></i> Completed
+            <button class="filter-btn" onclick="filterTodos('completed')" role="tab" aria-selected="false">
+              <i class="fas fa-check-circle" aria-hidden="true"></i> Completed
             </button>
-            <button class="filter-btn" onclick="filterTodos('important')">
-              <i class="fas fa-star"></i> Important
+            <button class="filter-btn" onclick="filterTodos('important')" role="tab" aria-selected="false">
+              <i class="fas fa-star" aria-hidden="true"></i> Important
             </button>
           </div>
 
-          <!-- Todo List -->
-          <div class="todo-list" id="todoList">
+          <div class="todo-list" id="todoList" role="list">
             <div class="empty-state">
-              <div class="icon">
+              <div class="icon" aria-hidden="true">
                 <i class="fas fa-clipboard-list"></i>
               </div>
               <p>No tasks yet. Add one to get started!</p>
@@ -313,32 +337,44 @@
           </div>
         </div>
 
-    <footer>
-      <div class="footer-content">
-        <div class="footer-heart">
-          <i class="fas fa-heart" style="color: #1db954"></i>
-          <p>Kamu lagi gabut?</p>
-          <p>Gass aja Follow My Media Sosial</p>
-        </div>
+        <footer>
+          <div class="footer-content">
+            <div class="footer-heart">
+              <i class="fas fa-heart" aria-hidden="true"></i>
+              <p>Kamu lagi gabut?</p>
+              <p>Gass aja Follow My Media Sosial</p>
+            </div>
 
-        <div class="social-links">
-          <a href="https://web.facebook.com/fahmirhamadann/" target="_blank" class="social-link">
-            <i class="fab fa-facebook-f"></i>
-          </a>
-          <a href="https://instagram.com/fhmirmdnn" target="_blank" class="social-link">
-            <i class="fab fa-instagram"></i>
-          </a>
-          <a href="https://github.com/shineorenji" target="_blank" class="social-link">
-            <i class="fab fa-github"></i>
-          </a>
-        </div>
+            <div class="social-links">
+              <a href="https://web.facebook.com/fahmirhamadann/" target="_blank" class="social-link" aria-label="Facebook">
+                <i class="fab fa-facebook-f" aria-hidden="true"></i>
+              </a>
+              <a href="https://instagram.com/fhmirmdnn" target="_blank" class="social-link" aria-label="Instagram">
+                <i class="fab fa-instagram" aria-hidden="true"></i>
+              </a>
+              <a href="https://github.com/shineorenji" target="_blank" class="social-link" aria-label="GitHub">
+                <i class="fab fa-github" aria-hidden="true"></i>
+              </a>
+            </div>
 
-        <div class="footer-copyright">
-          <p>&copy; 2025 Capruk - UNIVERISTY. All rights reserved.</p>
-        </div>
+            <div class="footer-copyright">
+              <p>&copy; 2025 Capruk - UNIVERSITY. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
       </div>
-    </footer>
+    </div>
 
-    <script src="js/script.js"></script>
+    <!-- Inline critical JS -->
+    <script>
+      // Prevent FOUC
+      document.documentElement.style.opacity = '0';
+      document.addEventListener('DOMContentLoaded', function() {
+        document.documentElement.style.opacity = '1';
+      });
+    </script>
+    
+    <!-- Defer main JS -->
+    <script src="js/script.js" defer></script>
   </body>
 </html>

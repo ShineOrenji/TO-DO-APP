@@ -1,436 +1,600 @@
-        // ====================
-        // Global Variables
-        // ====================
-        let currentUser = null;
-        let todos = [];
-        let currentFilter = 'all';
-        let music = document.getElementById('bgMusic');
-        let isPlaying = false;
+// ====================
+// Performance Optimized App
+// ====================
 
-        // ====================
-        // Password Visibility Toggle
-        // ====================
-        function setupPasswordToggles() {
-            // Login password toggle
-            document.getElementById('toggleLoginPassword').addEventListener('click', function() {
-                const passwordInput = document.getElementById('loginPassword');
-                const icon = this.querySelector('i');
-                
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    icon.className = 'fas fa-eye-slash';
-                } else {
-                    passwordInput.type = 'password';
-                    icon.className = 'fas fa-eye';
-                }
-            });
-            
-            // Register password toggle
-            document.getElementById('toggleRegisterPassword').addEventListener('click', function() {
-                const passwordInput = document.getElementById('registerPassword');
-                const icon = this.querySelector('i');
-                
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    icon.className = 'fas fa-eye-slash';
-                } else {
-                    passwordInput.type = 'password';
-                    icon.className = 'fas fa-eye';
-                }
-            });
-            
-            // Register confirm toggle
-            document.getElementById('toggleRegisterConfirm').addEventListener('click', function() {
-                const confirmInput = document.getElementById('registerConfirm');
-                const icon = this.querySelector('i');
-                
-                if (confirmInput.type === 'password') {
-                    confirmInput.type = 'text';
-                    icon.className = 'fas fa-eye-slash';
-                } else {
-                    confirmInput.type = 'password';
-                    icon.className = 'fas fa-eye';
-                }
+// Debounce function untuk optimasi
+const debounce = (func, wait) => {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+};
+
+class TodoApp {
+    constructor() {
+        this.currentUser = null;
+        this.todos = [];
+        this.currentFilter = 'all';
+        this.isPlaying = false;
+        this.music = document.getElementById('bgMusic');
+        
+        this.init();
+    }
+    
+    init() {
+        this.setupEventListeners();
+        this.checkAuth();
+        this.setVolume(50);
+    }
+    
+    // ====================
+    // DOM Event Handlers
+    // ====================
+    setupEventListeners() {
+        // Password toggles
+        ['toggleLoginPassword', 'toggleRegisterPassword', 'toggleRegisterConfirm'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.addEventListener('click', (e) => this.togglePassword(e));
+        });
+        
+        // Forms
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const todoInput = document.getElementById('todoInput');
+        
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+        }
+        
+        if (registerForm) {
+            registerForm.addEventListener('submit', (e) => this.handleRegister(e));
+        }
+        
+        if (todoInput) {
+            todoInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.addTodo();
             });
         }
-
-        // ====================
-        // Notification System
-        // ====================
-        function showNotification(message, type = 'success') {
-            const notification = document.getElementById('notification');
-            const text = document.getElementById('notificationText');
-            
-            text.textContent = message;
-            notification.style.display = 'flex';
-            
-            if (type === 'error') {
-                notification.style.background = 'linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%)';
-            } else {
-                notification.style.background = 'linear-gradient(135deg, #1DB954 0%, #1ed760 100%)';
-            }
-            
-            setTimeout(() => {
+        
+        // Volume slider dengan debounce
+        const volumeSlider = document.getElementById('volumeSlider');
+        if (volumeSlider) {
+            volumeSlider.addEventListener('input', debounce((e) => {
+                this.changeVolume(e.target.value);
+            }, 50));
+        }
+        
+        // Auto-hide notification
+        this.setupAutoHide();
+    }
+    
+    setupAutoHide() {
+        const notification = document.getElementById('notification');
+        if (notification) {
+            notification.addEventListener('click', () => {
                 notification.style.display = 'none';
-            }, 3000);
+            });
         }
-
-        // ====================
-        // Authentication Functions
-        // ====================
-        function showRegister() {
-            document.getElementById('loginBox').style.display = 'none';
-            document.getElementById('registerBox').style.display = 'block';
-            document.getElementById('registerForm').reset();
-            
-            // Reset strength meter
-            const strengthFill = document.getElementById('strengthFill');
-            const strengthText = document.getElementById('strengthText');
-            strengthFill.className = 'strength-fill strength-weak';
-            strengthText.textContent = 'Weak';
-        }
-
-        function showLogin() {
-            document.getElementById('registerBox').style.display = 'none';
-            document.getElementById('loginBox').style.display = 'block';
-            document.getElementById('loginForm').reset();
-        }
-
-        // Simple encryption for passwords
-        function simpleEncrypt(text) {
-            return btoa(text).split('').reverse().join('');
-        }
-
-        function simpleDecrypt(text) {
-            return atob(text.split('').reverse().join(''));
-        }
-
-        // Check if user is logged in on page load
-        function checkAuth() {
+    }
+    
+    // ====================
+    // Auth Functions
+    // ====================
+    checkAuth() {
+        try {
             const userData = localStorage.getItem('currentUser');
             if (userData) {
-                currentUser = JSON.parse(userData);
-                showApp();
+                this.currentUser = JSON.parse(userData);
+                this.showApp();
             }
+        } catch (e) {
+            console.error('Auth check failed:', e);
         }
-
-        // Register new user
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('registerUsername').value.trim();
-            const email = document.getElementById('registerEmail').value.trim();
-            const password = document.getElementById('registerPassword').value;
-            const confirm = document.getElementById('registerConfirm').value;
-            
-            // Validation
-            if (!username) {
-                showNotification('Username is required!', 'error');
-                return;
-            }
-            
-            if (password.length < 6) {
-                showNotification('Password must be at least 6 characters', 'error');
-                return;
-            }
-            
-            if (password !== confirm) {
-                showNotification('Passwords do not match!', 'error');
-                return;
-            }
-            
-            // Check if user already exists
+    }
+    
+    showRegister() {
+        const loginBox = document.getElementById('loginBox');
+        const registerBox = document.getElementById('registerBox');
+        
+        if (loginBox) loginBox.style.display = 'none';
+        if (registerBox) {
+            registerBox.style.display = 'block';
+            registerBox.removeAttribute('hidden');
+            document.getElementById('registerForm')?.reset();
+        }
+    }
+    
+    showLogin() {
+        const loginBox = document.getElementById('loginBox');
+        const registerBox = document.getElementById('registerBox');
+        
+        if (registerBox) registerBox.style.display = 'none';
+        if (loginBox) {
+            loginBox.style.display = 'block';
+            document.getElementById('loginForm')?.reset();
+        }
+    }
+    
+    handleLogin(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('loginUsername')?.value.trim();
+        const password = document.getElementById('loginPassword')?.value;
+        
+        if (!username || !password) {
+            this.showNotification('Please fill in all fields', 'error');
+            return;
+        }
+        
+        try {
             const users = JSON.parse(localStorage.getItem('users') || '{}');
-            if (users[username]) {
-                showNotification('Username already taken!', 'error');
+            const user = users[username];
+            
+            if (!user || this.simpleDecrypt(user.password) !== password) {
+                this.showNotification('Invalid username or password!', 'error');
                 return;
             }
             
-            // Create new user
+            this.currentUser = { 
+                username: user.username, 
+                email: user.email 
+            };
+            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+            
+            this.showNotification(`Welcome back, ${username}!`);
+            this.showApp();
+        } catch (error) {
+            this.showNotification('Login failed', 'error');
+        }
+    }
+    
+    handleRegister(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('registerUsername')?.value.trim();
+        const email = document.getElementById('registerEmail')?.value.trim();
+        const password = document.getElementById('registerPassword')?.value;
+        const confirm = document.getElementById('registerConfirm')?.value;
+        
+        if (!username) {
+            this.showNotification('Username is required!', 'error');
+            return;
+        }
+        
+        if (password.length < 6) {
+            this.showNotification('Password must be at least 6 characters', 'error');
+            return;
+        }
+        
+        if (password !== confirm) {
+            this.showNotification('Passwords do not match!', 'error');
+            return;
+        }
+        
+        try {
+            const users = JSON.parse(localStorage.getItem('users') || '{}');
+            
+            if (users[username]) {
+                this.showNotification('Username already taken!', 'error');
+                return;
+            }
+            
             const userData = {
                 username: username,
                 email: email || '',
-                password: simpleEncrypt(password),
-                createdAt: new Date().toISOString()
+                password: this.simpleEncrypt(password),
+                createdAt: new Date().toISOString(),
+                todos: []
             };
             
             users[username] = userData;
             localStorage.setItem('users', JSON.stringify(users));
             
-            // Auto login
-            currentUser = { username, email };
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            this.currentUser = { username, email: email || '' };
+            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
             
-            showNotification('Account created successfully!');
-            showApp();
-        });
-
-        // Login user
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('loginUsername').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            
-            if (!username || !password) {
-                showNotification('Please fill in all fields', 'error');
-                return;
-            }
-            
-            // Check user
-            const users = JSON.parse(localStorage.getItem('users') || '{}');
-            const user = users[username];
-            
-            if (!user || simpleDecrypt(user.password) !== password) {
-                showNotification('Invalid username or password!', 'error');
-                return;
-            }
-            
-            // Login successful
-            currentUser = { 
-                username: user.username, 
-                email: user.email 
-            };
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            
-            showNotification(`Welcome back, ${username}!`);
-            showApp();
-        });
-
-        // Logout
-        function logout() {
-            localStorage.removeItem('currentUser');
-            currentUser = null;
-            todos = [];
-            
-            document.getElementById('appContainer').style.display = 'none';
-            document.getElementById('authContainer').style.display = 'flex';
-            document.getElementById('loginBox').style.display = 'block';
-            document.getElementById('registerBox').style.display = 'none';
-            
-            // Clear forms
-            document.getElementById('loginForm').reset();
-            document.getElementById('registerForm').reset();
-            
-            showNotification('Logged out successfully');
+            this.showNotification('Account created successfully!');
+            this.showApp();
+        } catch (error) {
+            this.showNotification('Registration failed', 'error');
         }
-
-        // Show app interface
-        function showApp() {
-            // Update user info
-            document.getElementById('userGreeting').textContent = `Welcome, ${currentUser.username}!`;
-            document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
-            
-            // Load user's todos
-            loadUserTodos();
-            
-            // Update user stats
-            updateUserStats();
-            
-            // Show app
-            document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'block';
+    }
+    
+    logout() {
+        localStorage.removeItem('currentUser');
+        this.currentUser = null;
+        this.todos = [];
+        
+        const appContainer = document.getElementById('appContainer');
+        const authContainer = document.getElementById('authContainer');
+        const loginBox = document.getElementById('loginBox');
+        
+        if (appContainer) {
+            appContainer.style.display = 'none';
+            appContainer.setAttribute('hidden', 'true');
         }
-
-        // ====================
-        // Todo App Functions
-        // ====================
-        function loadUserTodos() {
-            const users = JSON.parse(localStorage.getItem('users') || '{}');
-            const user = users[currentUser.username];
-            todos = user?.todos || [];
-            renderTodos();
+        
+        if (authContainer) {
+            authContainer.style.display = 'flex';
         }
-
-        function saveUserTodos() {
+        
+        if (loginBox) {
+            loginBox.style.display = 'block';
+        }
+        
+        document.getElementById('loginForm')?.reset();
+        document.getElementById('registerForm')?.reset();
+        
+        this.showNotification('Logged out successfully');
+        
+        // Stop music
+        this.music.pause();
+        this.isPlaying = false;
+        this.updateMusicUI();
+    }
+    
+    // ====================
+    // Todo Functions
+    // ====================
+    loadUserTodos() {
+        try {
+            if (!this.currentUser) return;
+            
             const users = JSON.parse(localStorage.getItem('users') || '{}');
-            if (users[currentUser.username]) {
-                users[currentUser.username].todos = todos;
+            const user = users[this.currentUser.username];
+            this.todos = user?.todos || [];
+            this.renderTodos();
+        } catch (error) {
+            console.error('Failed to load todos:', error);
+            this.todos = [];
+        }
+    }
+    
+    saveUserTodos() {
+        try {
+            if (!this.currentUser) return;
+            
+            const users = JSON.parse(localStorage.getItem('users') || '{}');
+            if (users[this.currentUser.username]) {
+                users[this.currentUser.username].todos = this.todos;
                 localStorage.setItem('users', JSON.stringify(users));
             }
+        } catch (error) {
+            console.error('Failed to save todos:', error);
         }
-
-        function updateUserStats() {
-            const total = todos.length;
-            const completed = todos.filter(t => t.completed).length;
-            document.getElementById('userStats').textContent = `${total} tasks • ${completed} completed`;
-        }
-
-        function addTodo() {
-            const input = document.getElementById('todoInput');
-            const text = input.value.trim();
+    }
+    
+    addTodo() {
+        const input = document.getElementById('todoInput');
+        const text = input?.value.trim();
+        
+        if (text) {
+            const todo = {
+                id: Date.now(),
+                text: text,
+                completed: false,
+                important: false,
+                createdAt: new Date().toISOString()
+            };
             
-            if (text) {
-                const todo = {
-                    id: Date.now(),
-                    text: text,
-                    completed: false,
-                    important: false,
-                    createdAt: new Date().toISOString()
-                };
-                
-                todos.push(todo);
-                input.value = '';
-                saveUserTodos();
-                renderTodos();
-                updateUserStats();
-                showNotification('Task added!');
+            this.todos.push(todo);
+            input.value = '';
+            this.saveUserTodos();
+            this.renderTodos();
+            this.updateStats();
+            this.showNotification('Task added!');
+        }
+    }
+    
+    toggleTodo(id) {
+        this.todos = this.todos.map(todo => 
+            todo.id === id ? { ...todo, completed: !todo.completed } : todo
+        );
+        this.saveUserTodos();
+        this.renderTodos();
+        this.updateStats();
+    }
+    
+    toggleImportant(id) {
+        this.todos = this.todos.map(todo => 
+            todo.id === id ? { ...todo, important: !todo.important } : todo
+        );
+        this.saveUserTodos();
+        this.renderTodos();
+    }
+    
+    deleteTodo(id) {
+        this.todos = this.todos.filter(todo => todo.id !== id);
+        this.saveUserTodos();
+        this.renderTodos();
+        this.updateStats();
+        this.showNotification('Task deleted');
+    }
+    
+    filterTodos(filter) {
+        this.currentFilter = filter;
+        
+        // Update active button
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-selected', 'false');
+        });
+        
+        const eventBtn = event?.target;
+        if (eventBtn) {
+            eventBtn.classList.add('active');
+            eventBtn.setAttribute('aria-selected', 'true');
+        }
+        
+        this.renderTodos();
+    }
+    
+    renderTodos() {
+        const todoList = document.getElementById('todoList');
+        if (!todoList) return;
+        
+        const filteredTodos = this.todos.filter(todo => {
+            switch(this.currentFilter) {
+                case 'active': return !todo.completed;
+                case 'completed': return todo.completed;
+                case 'important': return todo.important;
+                default: return true;
             }
-        }
-
-        function toggleTodo(id) {
-            todos = todos.map(todo => 
-                todo.id === id ? { ...todo, completed: !todo.completed } : todo
-            );
-            saveUserTodos();
-            renderTodos();
-            updateUserStats();
-        }
-
-        function toggleImportant(id) {
-            todos = todos.map(todo => 
-                todo.id === id ? { ...todo, important: !todo.important } : todo
-            );
-            saveUserTodos();
-            renderTodos();
-        }
-
-        function deleteTodo(id) {
-            todos = todos.filter(todo => todo.id !== id);
-            saveUserTodos();
-            renderTodos();
-            updateUserStats();
-            showNotification('Task deleted');
-        }
-
-        function filterTodos(filter) {
-            currentFilter = filter;
-            
-            // Update active button
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            renderTodos();
-        }
-
-        function renderTodos() {
-            const todoList = document.getElementById('todoList');
-            
-            let filteredTodos = todos.filter(todo => {
-                if (currentFilter === 'active') return !todo.completed;
-                if (currentFilter === 'completed') return todo.completed;
-                if (currentFilter === 'important') return todo.important;
-                return true;
-            });
-
-            // Update stats
-            document.getElementById('totalCount').textContent = todos.length;
-            document.getElementById('activeCount').textContent = todos.filter(t => !t.completed).length;
-            document.getElementById('completedCount').textContent = todos.filter(t => t.completed).length;
-            document.getElementById('importantCount').textContent = todos.filter(t => t.important).length;
-
-            if (filteredTodos.length === 0) {
-                todoList.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">
-                            <i class="fas fa-clipboard-list"></i>
-                        </div>
-                        <p>No tasks to show</p>
+        });
+        
+        this.updateStats();
+        
+        if (filteredTodos.length === 0) {
+            todoList.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">
+                        <i class="fas fa-clipboard-list"></i>
                     </div>
-                `;
-                return;
-            }
-
-            todoList.innerHTML = filteredTodos.map(todo => `
-                <div class="todo-item">
-                    <div class="checkbox ${todo.completed ? 'checked' : ''}" onclick="toggleTodo(${todo.id})"></div>
-                    <div class="todo-text ${todo.completed ? 'completed' : ''}">
-                        ${todo.text}
-                        ${todo.important ? '<i class="fas fa-star" style="color: #1DB954; margin-left: 8px; font-size: 0.8em;"></i>' : ''}
-                    </div>
-                    <div class="todo-actions">
-                        <button class="action-btn star-btn ${todo.important ? 'important' : ''}" onclick="toggleImportant(${todo.id})">
-                            <i class="fas fa-star"></i>
-                        </button>
-                        <button class="action-btn delete-btn" onclick="deleteTodo(${todo.id})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+                    <p>No tasks to show</p>
                 </div>
-            `).join('');
+            `;
+            return;
         }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                addTodo();
-            }
+        
+        // Gunakan DocumentFragment untuk batch update
+        const fragment = document.createDocumentFragment();
+        
+        filteredTodos.forEach(todo => {
+            const todoItem = document.createElement('div');
+            todoItem.className = 'todo-item';
+            todoItem.innerHTML = `
+                <div class="checkbox ${todo.completed ? 'checked' : ''}" 
+                     onclick="app.toggleTodo(${todo.id})"
+                     role="checkbox"
+                     aria-checked="${todo.completed}"></div>
+                <div class="todo-text ${todo.completed ? 'completed' : ''}">
+                    ${this.escapeHtml(todo.text)}
+                    ${todo.important ? '<i class="fas fa-star" style="color: #1DB954; margin-left: 8px; font-size: 0.8em;"></i>' : ''}
+                </div>
+                <div class="todo-actions">
+                    <button class="action-btn star-btn ${todo.important ? 'important' : ''}" 
+                            onclick="app.toggleImportant(${todo.id})"
+                            aria-label="${todo.important ? 'Remove importance' : 'Mark important'}">
+                        <i class="fas fa-star"></i>
+                    </button>
+                    <button class="action-btn delete-btn" 
+                            onclick="app.deleteTodo(${todo.id})"
+                            aria-label="Delete task">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            fragment.appendChild(todoItem);
+        });
+        
+        todoList.innerHTML = '';
+        todoList.appendChild(fragment);
+    }
+    
+    updateStats() {
+        const total = this.todos.length;
+        const completed = this.todos.filter(t => t.completed).length;
+        const active = total - completed;
+        const important = this.todos.filter(t => t.important).length;
+        
+        const userStats = document.getElementById('userStats');
+        if (userStats) {
+            userStats.textContent = `${total} tasks • ${completed} completed`;
         }
-
-        // ====================
-        // Music Player Functions - UPGRADED!
-        // ====================
-        function toggleMusic() {
-            const playBtn = document.getElementById('playBtn');
-            const status = document.getElementById('musicStatus');
-            const visualizer = document.querySelector('.visualizer');
-            
-            if (isPlaying) {
-                music.pause();
-                playBtn.innerHTML = '<i class="fas fa-play"></i>';
-                status.textContent = 'Paused';
-                isPlaying = false;
-                visualizer.style.opacity = '0.5';
-            } else {
-                music.play().catch(e => {
-                    console.log("Autoplay prevented:", e);
-                    status.textContent = 'Click play to start music';
-                });
-                playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                status.textContent = 'Now playing...';
-                isPlaying = true;
-                visualizer.style.opacity = '1';
-            }
+        
+        const updateStat = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        };
+        
+        updateStat('totalCount', total);
+        updateStat('activeCount', active);
+        updateStat('completedCount', completed);
+        updateStat('importantCount', important);
+    }
+    
+    // ====================
+    // Music Functions
+    // ====================
+    toggleMusic() {
+        if (this.isPlaying) {
+            this.music.pause();
+        } else {
+            this.music.play().catch(e => {
+                console.log("Autoplay prevented:", e);
+                this.updateMusicStatus('Click play to start music');
+            });
         }
-
-        function changeVolume(value) {
-            music.volume = value / 100;
-            document.getElementById('volumeText').textContent = value + '%';
-            
-            // Update volume icon based on level
-            const volumeIcon = document.querySelector('.volume-icon i');
-            if (value == 0) {
+        
+        this.isPlaying = !this.isPlaying;
+        this.updateMusicUI();
+    }
+    
+    updateMusicUI() {
+        const playBtn = document.getElementById('playBtn');
+        const status = document.getElementById('musicStatus');
+        const visualizer = document.querySelector('.visualizer');
+        
+        if (!playBtn || !status) return;
+        
+        if (this.isPlaying) {
+            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            status.textContent = 'Now playing...';
+            if (visualizer) visualizer.style.opacity = '1';
+        } else {
+            playBtn.innerHTML = '<i class="fas fa-play"></i>';
+            status.textContent = 'Paused';
+            if (visualizer) visualizer.style.opacity = '0.5';
+        }
+    }
+    
+    setVolume(value) {
+        const volume = Math.max(0, Math.min(100, parseInt(value) || 50));
+        this.music.volume = volume / 100;
+        
+        const volumeText = document.getElementById('volumeText');
+        if (volumeText) volumeText.textContent = volume + '%';
+        
+        const volumeSlider = document.getElementById('volumeSlider');
+        if (volumeSlider) volumeSlider.value = volume;
+        
+        // Update volume icon
+        const volumeIcon = document.querySelector('.volume-icon i');
+        if (volumeIcon) {
+            if (volume === 0) {
                 volumeIcon.className = 'fas fa-volume-mute';
-            } else if (value < 0) {
+            } else if (volume < 0) {
                 volumeIcon.className = 'fas fa-volume-down';
-            } else if (value < 0) {
+            } else if (volume < 0) {
                 volumeIcon.className = 'fas fa-volume';
             } else {
                 volumeIcon.className = 'fas fa-volume-up';
             }
-            
-            // Pastikan slider tetap terlihat
-            const slider = document.getElementById('volumeSlider');
-            slider.style.opacity = '1';
         }
+    }
+    
+    changeVolume(value) {
+        this.setVolume(value);
+    }
+    
+    updateMusicStatus(text) {
+        const status = document.getElementById('musicStatus');
+        if (status) status.textContent = text;
+    }
+    
+    // ====================
+    // UI Functions
+    // ====================
+    showApp() {
+        const authContainer = document.getElementById('authContainer');
+        const appContainer = document.getElementById('appContainer');
+        
+        if (!this.currentUser) return;
+        
+        // Update user info
+        const greeting = document.getElementById('userGreeting');
+        const avatar = document.getElementById('userAvatar');
+        
+        if (greeting) greeting.textContent = `Welcome, ${this.currentUser.username}!`;
+        if (avatar) avatar.textContent = this.currentUser.username.charAt(0).toUpperCase();
+        
+        // Show app
+        if (authContainer) authContainer.style.display = 'none';
+        if (appContainer) {
+            appContainer.style.display = 'block';
+            appContainer.removeAttribute('hidden');
+        }
+        
+        // Load todos
+        this.loadUserTodos();
+        
+        // Smooth scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    showNotification(message, type = 'success') {
+        const notification = document.getElementById('notification');
+        const text = document.getElementById('notificationText');
+        
+        if (!notification || !text) return;
+        
+        text.textContent = message;
+        notification.style.display = 'flex';
+        
+        if (type === 'error') {
+            notification.style.background = 'linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%)';
+        } else {
+            notification.style.background = 'linear-gradient(135deg, #1DB954 0%, #1ed760 100%)';
+        }
+        
+        // Auto-hide
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
+    
+    togglePassword(event) {
+        const button = event.currentTarget;
+        const inputId = button.id.includes('Login') ? 'loginPassword' : 
+                       button.id.includes('Confirm') ? 'registerConfirm' : 'registerPassword';
+        const input = document.getElementById(inputId);
+        const icon = button.querySelector('i');
+        
+        if (!input) return;
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'fas fa-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'fas fa-eye';
+        }
+    }
+    
+    // ====================
+    // Utility Functions
+    // ====================
+    simpleEncrypt(text) {
+        return btoa(encodeURIComponent(text)).split('').reverse().join('');
+    }
+    
+    simpleDecrypt(text) {
+        return decodeURIComponent(atob(text.split('').reverse().join('')));
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
 
-        // ====================
-        // Initialize App
-        // ====================
-        document.addEventListener('DOMContentLoaded', function() {
-            // Setup password toggles
-            setupPasswordToggles();
-            
-            // Check if user is already logged in
-            checkAuth();
-            
-            // Set initial volume
-            music.volume = 0.5;
-            
-            // Initialize slider
-            const slider = document.getElementById('volumeSlider');
-            slider.addEventListener('mousedown', function() {
-                this.style.opacity = '1';
-            });
-        });
+// Initialize app
+let app;
+
+document.addEventListener('DOMContentLoaded', function() {
+    app = new TodoApp();
+    
+    // Global functions untuk inline onclick
+    window.showRegister = () => app.showRegister();
+    window.showLogin = () => app.showLogin();
+    window.logout = () => app.logout();
+    window.addTodo = () => app.addTodo();
+    window.filterTodos = (filter) => app.filterTodos(filter);
+    window.toggleMusic = () => app.toggleMusic();
+    window.changeVolume = (value) => app.changeVolume(value);
+    window.toggleTodo = (id) => app.toggleTodo(id);
+    window.toggleImportant = (id) => app.toggleImportant(id);
+    window.deleteTodo = (id) => app.deleteTodo(id);
+    
+    // Handle Enter key untuk todo input
+    window.handleKeyPress = function(e) {
+        if (e.key === 'Enter') {
+            app.addTodo();
+        }
+    };
+    
+    // Update opacity untuk FOUC prevention
+    document.documentElement.style.opacity = '1';
+});
