@@ -100,7 +100,7 @@ body {
 }
 
 .auth-logo {
-  font-size: 30px;
+  font-size: 25px;
   font-weight: 600;
   background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
   -webkit-background-clip: text;
@@ -826,7 +826,7 @@ footer {
   }
 
   .auth-logo {
-    font-size: 20px;
+    font-size: 25px;
   }
   
   h1 {
