@@ -16,6 +16,26 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(180deg); }
+}
+
+@keyframes visualizer {
+  0%, 100% { height: 4px; }
+  50% { height: 25px; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-10px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
 /* Base styles */
 html {
   opacity: 0;
@@ -34,7 +54,7 @@ body {
   will-change: transform;
 }
 
-/* Background elements (reduced for performance) */
+/* Background elements */
 .bg-element {
   position: fixed;
   opacity: 0.03;
@@ -56,11 +76,6 @@ body {
   animation: float 20s infinite linear reverse;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-15px) rotate(180deg); }
-}
-
 /* Utility classes */
 .sr-only {
   position: absolute;
@@ -72,6 +87,39 @@ body {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Custom Scrollbar untuk seluruh website */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  margin: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #1DB954 0%, #1ed760 100%);
+  border-radius: 10px;
+  border: 3px solid rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #1ed760 0%, #1DB954 100%);
+  box-shadow: 0 0 10px rgba(29, 185, 84, 0.5);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1DB954 rgba(0, 0, 0, 0.2);
 }
 
 /* Auth Container */
@@ -240,6 +288,11 @@ body {
   z-index: 1000;
   animation: slideInRight 0.3s ease-out;
   display: none;
+  box-shadow: 0 4px 15px rgba(29, 185, 84, 0.2);
+}
+
+.notification.error {
+  background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
 }
 
 /* App Container */
@@ -346,15 +399,15 @@ h1 {
 }
 
 .music-player::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url("../assets/background.jpg") center/cover;
-    filter: blur(px); /* Typo, seharusnya blur value */
-    opacity: 0.5;
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("../assets/background.jpg") center/cover;
+  filter: blur(1px);
+  opacity: 0.5;
 }
 
 .music-content {
@@ -409,11 +462,6 @@ h1 {
   animation: visualizer 1.2s infinite ease-in-out;
 }
 
-@keyframes visualizer {
-  0%, 100% { height: 4px; }
-  50% { height: 25px; }
-}
-
 .visualizer-bar:nth-child(2) { animation-delay: 0.2s; }
 .visualizer-bar:nth-child(3) { animation-delay: 0.4s; }
 
@@ -456,6 +504,11 @@ h1 {
   min-width: 180px;
 }
 
+.volume-slider-container {
+  position: relative;
+  flex: 1;
+}
+
 .volume-slider {
   flex: 1;
   height: 6px;
@@ -464,6 +517,7 @@ h1 {
   outline: none;
   -webkit-appearance: none;
   cursor: pointer;
+  width: 100%;
 }
 
 .volume-slider::-webkit-slider-thumb {
@@ -552,10 +606,12 @@ h1 {
 .input-wrapper {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 #todoInput {
   flex: 1;
+  min-width: 200px;
   padding: 14px 18px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -572,6 +628,23 @@ h1 {
 }
 
 #todoInput:focus {
+  border-color: #1db954;
+}
+
+.date-input {
+  padding: 14px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.95em;
+  font-family: inherit;
+  min-width: 140px;
+  transition: border-color 0.2s ease;
+}
+
+.date-input:focus {
+  outline: none;
   border-color: #1db954;
 }
 
@@ -630,24 +703,33 @@ h1 {
   border-color: transparent;
 }
 
-/* Todo List */
+/* Todo List dengan scrollbar khusus */
 .todo-list {
   padding: 25px;
   max-height: 400px;
   overflow-y: auto;
 }
 
+/* Scrollbar khusus untuk todo-list */
 .todo-list::-webkit-scrollbar {
-  width: 6px;
+  width: 10px;
 }
 
 .todo-list::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  margin: 5px;
 }
 
 .todo-list::-webkit-scrollbar-thumb {
-  background: rgba(29, 185, 84, 0.4);
-  border-radius: 3px;
+  background: linear-gradient(135deg, #1DB954 0%, #1ed760 100%);
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.05);
+}
+
+.todo-list::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #1ed760 0%, #1DB954 100%);
+  box-shadow: 0 0 8px rgba(29, 185, 84, 0.4);
 }
 
 .empty-state {
@@ -679,6 +761,47 @@ h1 {
   transform: translateX(3px);
 }
 
+/* Priority Indicator */
+.priority-indicator {
+  width: 6px;
+  height: 40px;
+  border-radius: 3px;
+  background: #1DB954;
+  margin-right: 0;
+  flex-shrink: 0;
+}
+
+.priority-high {
+  background: #ff416c;
+}
+
+.priority-medium {
+  background: #ffa500;
+}
+
+.priority-low {
+  background: #1DB954;
+}
+
+.priority-overdue {
+  background: #ff0000;
+}
+
+.priority-today {
+  background: #ffa500;
+}
+
+/* Todo Number */
+.todo-number {
+  min-width: 30px;
+  color: #888;
+  font-size: 0.85em;
+  font-weight: 500;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Checkbox */
 .checkbox {
   width: 22px;
   height: 22px;
@@ -703,6 +826,20 @@ h1 {
   font-weight: bold;
 }
 
+/* Todo Content */
+.todo-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.todo-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .todo-text {
   flex: 1;
   font-size: 1em;
@@ -716,9 +853,42 @@ h1 {
   color: #666;
 }
 
+/* Date Badge */
+.date-badge {
+  padding: 4px 10px;
+  background: rgba(29, 185, 84, 0.15);
+  border-radius: 8px;
+  font-size: 0.75em;
+  color: #1db954;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.date-overdue {
+  background: rgba(255, 65, 108, 0.15);
+  color: #ff416c;
+}
+
+.date-today {
+  background: rgba(255, 165, 0, 0.15);
+  color: #ffa500;
+}
+
+.todo-date {
+  font-size: 0.8em;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Todo Actions */
 .todo-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .action-btn {
@@ -742,10 +912,12 @@ h1 {
 
 .star-btn.important {
   background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+  color: white;
 }
 
 .delete-btn:hover {
   background: #ff416c;
+  color: white;
 }
 
 /* Footer */
@@ -823,6 +995,7 @@ footer {
 
   .volume-control {
     justify-content: center;
+    min-width: 100%;
   }
 
   .auth-logo {
@@ -855,6 +1028,11 @@ footer {
     flex-direction: column;
   }
   
+  #todoInput, .date-input {
+    width: 100%;
+    min-width: auto;
+  }
+  
   .todo-list {
     max-height: 350px;
   }
@@ -867,10 +1045,17 @@ footer {
   .auth-box {
     padding: 25px 20px;
   }
+  
+  .todo-item {
+    flex-wrap: wrap;
+  }
+  
+  .todo-actions {
+    margin-left: auto;
+  }
 }
 
 @media (max-width: 480px) {
-  
   .bg-element {
     font-size: 3.5rem;
   }
@@ -883,11 +1068,15 @@ footer {
     justify-content: center;
   }
   
-  .todo-item {
-    flex-wrap: wrap;
+  .todo-content {
+    width: 100%;
+    order: 1;
   }
   
   .todo-actions {
-    margin-left: auto;
+    order: 2;
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
   }
 }

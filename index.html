@@ -35,7 +35,7 @@
   </head>
 
   <body>
-    <!-- Background Elements (diminimalisir untuk performa) -->
+    <!-- Background Elements -->
     <div class="bg-elements">
       <div class="bg-element bg-1">🎧</div>
       <div class="bg-element bg-2">📝</div>
@@ -53,7 +53,6 @@
         <div class="auth-header">
           <div class="auth-logo">
             <img src="assets/favico.png" alt="yokai" style="width: 50%;">
-            <!-- <i class="fas fa-tasks" aria-hidden="true" ></i> -->
             <div>
               <span class="awal">To-Do App</span>
               <br>
@@ -298,6 +297,12 @@
             <div class="stat-number" id="importantCount">0</div>
             <div class="stat-label"><i class="fas fa-star" aria-hidden="true"></i> Important</div>
           </div>
+          <div class="stat-card">
+            <div class="stat-number" id="todayCount">0</div>
+            <div class="stat-label">
+              <i class="fas fa-calendar-day" aria-hidden="true"></i> Today
+            </div>
+          </div>
         </div>
 
         <!-- Main Card -->
@@ -310,6 +315,14 @@
                 id="todoInput"
                 placeholder="Add a new task..."
                 aria-label="Add a new task"
+                onkeypress="handleKeyPress(event)"
+              />
+              <input
+                type="date"
+                id="todoDate"
+                class="date-input"
+                aria-label="Task due date"
+                value=""
               />
               <button class="add-btn" onclick="addTodo()" aria-label="Add task">
                 <i class="fas fa-plus" aria-hidden="true"></i> Add Task
@@ -329,6 +342,9 @@
             </button>
             <button class="filter-btn" onclick="filterTodos('important')" role="tab" aria-selected="false">
               <i class="fas fa-star" aria-hidden="true"></i> Important
+            </button>
+            <button class="filter-btn" onclick="filterTodos('today')" role="tab" aria-selected="false">
+              <i class="fas fa-calendar-day" aria-hidden="true"></i> Today
             </button>
           </div>
 

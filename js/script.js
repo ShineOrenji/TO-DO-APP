@@ -1,5 +1,5 @@
 // ====================
-// Performance Optimized App
+// Performance Optimized Todo App
 // ====================
 
 // Debounce function untuk optimasi
@@ -18,6 +18,7 @@ class TodoApp {
         this.currentFilter = 'all';
         this.isPlaying = false;
         this.music = document.getElementById('bgMusic');
+        this.todoCounter = 1;
         
         this.init();
     }
@@ -26,10 +27,11 @@ class TodoApp {
         this.setupEventListeners();
         this.checkAuth();
         this.setVolume(50);
+        this.setupDateInput();
     }
     
     // ====================
-    // DOM Event Handlers
+    // SETUP FUNCTIONS
     // ====================
     setupEventListeners() {
         // Password toggles
@@ -78,8 +80,19 @@ class TodoApp {
         }
     }
     
+    setupDateInput() {
+        const dateInput = document.getElementById('todoDate');
+        if (dateInput) {
+            // Set default to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            dateInput.value = tomorrow.toISOString().split('T')[0];
+            dateInput.min = new Date().toISOString().split('T')[0];
+        }
+    }
+    
     // ====================
-    // Auth Functions
+    // AUTH FUNCTIONS
     // ====================
     checkAuth() {
         try {
@@ -235,7 +248,7 @@ class TodoApp {
     }
     
     // ====================
-    // Todo Functions
+    // TODO FUNCTIONS
     // ====================
     loadUserTodos() {
         try {
@@ -244,10 +257,19 @@ class TodoApp {
             const users = JSON.parse(localStorage.getItem('users') || '{}');
             const user = users[this.currentUser.username];
             this.todos = user?.todos || [];
+            
+            // Set counter ke nomor tertinggi + 1
+            if (this.todos.length > 0) {
+                this.todoCounter = Math.max(...this.todos.map(t => t.number || 0)) + 1;
+            } else {
+                this.todoCounter = 1;
+            }
+            
             this.renderTodos();
         } catch (error) {
             console.error('Failed to load todos:', error);
             this.todos = [];
+            this.todoCounter = 1;
         }
     }
     
@@ -267,19 +289,28 @@ class TodoApp {
     
     addTodo() {
         const input = document.getElementById('todoInput');
+        const dateInput = document.getElementById('todoDate');
         const text = input?.value.trim();
+        const date = dateInput?.value;
         
         if (text) {
+            const now = new Date();
+            const dueDate = date ? new Date(date) : new Date(now.setDate(now.getDate() + 1));
+            
             const todo = {
                 id: Date.now(),
+                number: this.todoCounter++,
                 text: text,
                 completed: false,
                 important: false,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                dueDate: dueDate.toISOString(),
+                priority: this.calculatePriority(dueDate)
             };
             
             this.todos.push(todo);
             input.value = '';
+            this.setupDateInput(); // Reset date to tomorrow
             this.saveUserTodos();
             this.renderTodos();
             this.updateStats();
@@ -287,10 +318,49 @@ class TodoApp {
         }
     }
     
+    calculatePriority(dueDate) {
+        const today = new Date();
+        const diffTime = dueDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 0) return 'overdue';
+        if (diffDays === 0) return 'today';
+        if (diffDays <= 2) return 'high';
+        if (diffDays <= 7) return 'medium';
+        return 'low';
+    }
+    
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        if (date.toDateString() === today.toDateString()) {
+            return 'Today';
+        } else if (date.toDateString() === tomorrow.toDateString()) {
+            return 'Tomorrow';
+        } else {
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+            });
+        }
+    }
+    
     toggleTodo(id) {
-        this.todos = this.todos.map(todo => 
-            todo.id === id ? { ...todo, completed: !todo.completed } : todo
-        );
+        this.todos = this.todos.map(todo => {
+            if (todo.id === id) {
+                const updatedTodo = { ...todo, completed: !todo.completed };
+                // Update priority if task is completed/not completed
+                if (!updatedTodo.completed) {
+                    updatedTodo.priority = this.calculatePriority(new Date(todo.dueDate));
+                }
+                return updatedTodo;
+            }
+            return todo;
+        });
         this.saveUserTodos();
         this.renderTodos();
         this.updateStats();
@@ -302,6 +372,7 @@ class TodoApp {
         );
         this.saveUserTodos();
         this.renderTodos();
+        this.showNotification('Priority updated!');
     }
     
     deleteTodo(id) {
@@ -339,8 +410,18 @@ class TodoApp {
                 case 'active': return !todo.completed;
                 case 'completed': return todo.completed;
                 case 'important': return todo.important;
+                case 'today': 
+                    const today = new Date().toDateString();
+                    return new Date(todo.dueDate).toDateString() === today && !todo.completed;
                 default: return true;
             }
+        }).sort((a, b) => {
+            // Sort by: overdue > today > priority > date
+            const priorityOrder = { 'overdue': 0, 'today': 1, 'high': 2, 'medium': 3, 'low': 4 };
+            if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
+                return priorityOrder[a.priority] - priorityOrder[b.priority];
+            }
+            return new Date(a.dueDate) - new Date(b.dueDate);
         });
         
         this.updateStats();
@@ -351,26 +432,43 @@ class TodoApp {
                     <div class="icon">
                         <i class="fas fa-clipboard-list"></i>
                     </div>
-                    <p>No tasks to show</p>
+                    <p>No ${this.currentFilter === 'all' ? '' : this.currentFilter} tasks to show</p>
                 </div>
             `;
             return;
         }
         
-        // Gunakan DocumentFragment untuk batch update
+        // Reset display counter untuk tampilan
+        let displayCounter = 1;
+        
         const fragment = document.createDocumentFragment();
         
         filteredTodos.forEach(todo => {
             const todoItem = document.createElement('div');
             todoItem.className = 'todo-item';
+            
+            const priorityClass = `priority-${todo.priority}`;
+            const dateClass = todo.priority === 'overdue' ? 'date-overdue' : 
+                            todo.priority === 'today' ? 'date-today' : '';
+            
             todoItem.innerHTML = `
+                <div class="priority-indicator ${priorityClass}"></div>
+                <div class="todo-number">${displayCounter.toString().padStart(2, '0')}</div>
                 <div class="checkbox ${todo.completed ? 'checked' : ''}" 
                      onclick="app.toggleTodo(${todo.id})"
                      role="checkbox"
                      aria-checked="${todo.completed}"></div>
-                <div class="todo-text ${todo.completed ? 'completed' : ''}">
-                    ${this.escapeHtml(todo.text)}
-                    ${todo.important ? '<i class="fas fa-star" style="color: #1DB954; margin-left: 8px; font-size: 0.8em;"></i>' : ''}
+                <div class="todo-content">
+                    <div class="todo-main">
+                        <div class="todo-text ${todo.completed ? 'completed' : ''}">
+                            ${this.escapeHtml(todo.text)}
+                            ${todo.important ? '<i class="fas fa-star" style="color: #1DB954; margin-left: 8px; font-size: 0.8em;"></i>' : ''}
+                        </div>
+                    </div>
+                    <div class="todo-date">
+                        <i class="far fa-calendar"></i>
+                        <span class="date-badge ${dateClass}">${this.formatDate(todo.dueDate)}</span>
+                    </div>
                 </div>
                 <div class="todo-actions">
                     <button class="action-btn star-btn ${todo.important ? 'important' : ''}" 
@@ -386,6 +484,7 @@ class TodoApp {
                 </div>
             `;
             fragment.appendChild(todoItem);
+            displayCounter++;
         });
         
         todoList.innerHTML = '';
@@ -397,6 +496,10 @@ class TodoApp {
         const completed = this.todos.filter(t => t.completed).length;
         const active = total - completed;
         const important = this.todos.filter(t => t.important).length;
+        const today = new Date().toDateString();
+        const todayCount = this.todos.filter(t => 
+            new Date(t.dueDate).toDateString() === today && !t.completed
+        ).length;
         
         const userStats = document.getElementById('userStats');
         if (userStats) {
@@ -412,10 +515,11 @@ class TodoApp {
         updateStat('activeCount', active);
         updateStat('completedCount', completed);
         updateStat('importantCount', important);
+        updateStat('todayCount', todayCount);
     }
     
     // ====================
-    // Music Functions
+    // MUSIC FUNCTIONS
     // ====================
     toggleMusic() {
         if (this.isPlaying) {
@@ -457,17 +561,17 @@ class TodoApp {
         if (volumeText) volumeText.textContent = volume + '%';
         
         const volumeSlider = document.getElementById('volumeSlider');
-        if (volumeSlider) volumeSlider.value = volume;
+        if (volumeSlider) {
+            volumeSlider.value = volume;
+        }
         
         // Update volume icon
         const volumeIcon = document.querySelector('.volume-icon i');
         if (volumeIcon) {
             if (volume === 0) {
                 volumeIcon.className = 'fas fa-volume-mute';
-            } else if (volume < 0) {
+            } else if (volume < 50) {
                 volumeIcon.className = 'fas fa-volume-down';
-            } else if (volume < 0) {
-                volumeIcon.className = 'fas fa-volume';
             } else {
                 volumeIcon.className = 'fas fa-volume-up';
             }
@@ -484,7 +588,7 @@ class TodoApp {
     }
     
     // ====================
-    // UI Functions
+    // UI FUNCTIONS
     // ====================
     showApp() {
         const authContainer = document.getElementById('authContainer');
@@ -521,12 +625,7 @@ class TodoApp {
         
         text.textContent = message;
         notification.style.display = 'flex';
-        
-        if (type === 'error') {
-            notification.style.background = 'linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%)';
-        } else {
-            notification.style.background = 'linear-gradient(135deg, #1DB954 0%, #1ed760 100%)';
-        }
+        notification.className = type === 'error' ? 'notification error' : 'notification';
         
         // Auto-hide
         setTimeout(() => {
@@ -553,7 +652,7 @@ class TodoApp {
     }
     
     // ====================
-    // Utility Functions
+    // UTILITY FUNCTIONS
     // ====================
     simpleEncrypt(text) {
         return btoa(encodeURIComponent(text)).split('').reverse().join('');
@@ -570,13 +669,18 @@ class TodoApp {
     }
 }
 
-// Initialize app
+// ====================
+// GLOBAL APP INSTANCE
+// ====================
 let app;
 
+// ====================
+// INITIALIZATION
+// ====================
 document.addEventListener('DOMContentLoaded', function() {
     app = new TodoApp();
     
-    // Global functions untuk inline onclick
+    // Expose functions to global scope for onclick handlers
     window.showRegister = () => app.showRegister();
     window.showLogin = () => app.showLogin();
     window.logout = () => app.logout();
@@ -587,9 +691,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.toggleTodo = (id) => app.toggleTodo(id);
     window.toggleImportant = (id) => app.toggleImportant(id);
     window.deleteTodo = (id) => app.deleteTodo(id);
-    
-    // Handle Enter key untuk todo input
-    window.handleKeyPress = function(e) {
+    window.handleKeyPress = (e) => {
         if (e.key === 'Enter') {
             app.addTodo();
         }
