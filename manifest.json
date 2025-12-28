@@ -47,7 +47,7 @@
       "url": "/#new-task",
       "icons": [
         {
-          "src": "assets/add-icon.png",
+          "src": "assets/favico.png",
           "sizes": "96x96"
         }
       ]
@@ -59,7 +59,7 @@
       "url": "/?filter=today",
       "icons": [
         {
-          "src": "assets/today-icon.png",
+          "src": "assets/favico.png",
           "sizes": "96x96"
         }
       ]
@@ -67,14 +67,14 @@
   ],
   "screenshots": [
     {
-      "src": "assets/screenshot-desktop.png",
+      "src": "assets/favico.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Desktop view of To-Do App"
     },
     {
-      "src": "assets/screenshot-mobile.png",
+      "src": "assets/favico.png",
       "sizes": "750x1334",
       "type": "image/png",
       "form_factor": "narrow",
