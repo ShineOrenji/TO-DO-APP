@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>To-Do App | By Capruk - University</title>
     
+    <meta name="theme-color" content="#1DB954">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="To-Do App">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="To-Do App">
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="assets/favico.png">
+    <link rel="apple-touch-icon" href="assets/favico.png">
+
     <!-- Preload resources -->
     <link rel="preload" href="assets/background.jpg" as="image">
     <link rel="preload" href="css/style.css" as="style">
@@ -397,5 +408,137 @@
     
     <!-- Defer main JS -->
     <script src="js/script.js" defer></script>
+    <script>
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(registration => {
+          console.log('ServiceWorker registered:', registration.scope);
+          
+          // Check for updates
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            console.log('ServiceWorker update found!');
+            
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('New content is available; please refresh.');
+                // Show update notification to user
+                if (confirm('A new version is available! Refresh to update?')) {
+                  window.location.reload();
+                }
+              }
+            });
+          });
+        })
+        .catch(error => {
+          console.log('ServiceWorker registration failed:', error);
+        });
+    });
+  }
+
+  // PWA installation prompt
+  let deferredPrompt;
+  const installButton = document.createElement('button');
+  
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Show custom install button
+    installButton.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      z-index: 1000;
+      font-family: inherit;
+      display: none;
+      box-shadow: 0 4px 15px rgba(29, 185, 84, 0.2);
+    `;
+    installButton.innerHTML = '<i class="fas fa-download"></i> Install App';
+    document.body.appendChild(installButton);
+    
+    installButton.style.display = 'block';
+    
+    installButton.addEventListener('click', () => {
+      installButton.style.display = 'none';
+      deferredPrompt.prompt();
+      
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted install');
+        } else {
+          console.log('User dismissed install');
+        }
+        deferredPrompt = null;
+      });
+    });
+  });
+
+  // Track app installation
+  window.addEventListener('appinstalled', () => {
+    console.log('PWA installed successfully');
+    if (installButton && installButton.parentNode) {
+      installButton.parentNode.removeChild(installButton);
+    }
+    
+    // Show notification
+    if (app && app.showNotification) {
+      app.showNotification('App installed successfully! 🎉');
+    }
+  });
+
+  // Check if app is running in standalone mode
+  function isRunningStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches || 
+           window.navigator.standalone || 
+           document.referrer.includes('android-app://');
+  }
+
+  // Update UI if running as PWA
+  if (isRunningStandalone()) {
+    document.addEventListener('DOMContentLoaded', () => {
+      const footer = document.querySelector('footer');
+      if (footer) {
+        const pwaBadge = document.createElement('div');
+        pwaBadge.style.cssText = `
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 4px 10px;
+          background: rgba(29, 185, 84, 0.15);
+          border-radius: 8px;
+          font-size: 0.75em;
+          color: #1db954;
+          margin-left: 10px;
+        `;
+        pwaBadge.innerHTML = '<i class="fas fa-mobile-alt"></i> App Mode';
+        document.querySelector('.footer-copyright p')?.appendChild(pwaBadge);
+      }
+    });
+  }
+
+  // Offline detection
+  window.addEventListener('online', () => {
+    console.log('You are online');
+    if (app && app.showNotification) {
+      app.showNotification('You are back online!');
+    }
+  });
+
+  window.addEventListener('offline', () => {
+    console.log('You are offline');
+    if (app && app.showNotification) {
+      app.showNotification('You are offline. Changes will sync when back online.', 'error');
+    }
+  });
+</script>
   </body>
 </html>
