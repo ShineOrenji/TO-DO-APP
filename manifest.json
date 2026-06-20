@@ -2,21 +2,21 @@
   "name": "To-Do App - Kitsune",
   "short_name": "To-Do App",
   "description": "To-Do App by Yokai - Capruk University",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#121212",
   "theme_color": "#1DB954",
   "icons": [
     {
-      "src": "assets/favico.png",
+      "src": "/assets/favico.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "assets/favico.png",
+      "src": "/assets/favico.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

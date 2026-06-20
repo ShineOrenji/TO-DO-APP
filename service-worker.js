@@ -1,14 +1,14 @@
-const CACHE_NAME = "todo-app-v2";
+const CACHE_NAME = "todo-app-v3";
 
 const STATIC_ASSETS = [
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./css/style.css",
-  "./js/script.js",
-  "./assets/favico.png",
-  "./assets/background.jpg",
-  "./assets/Napking Teman Official Music Video.mp3"
+  "/",
+  "/index.html",
+  "/manifest.json",
+  "/css/style.css",
+  "/js/script.js",
+  "/assets/favico.png",
+  "/assets/background.jpg",
+  "/assets/Napking Teman Official Music Video.mp3"
 ];
 
 self.addEventListener("install", event => {
@@ -55,7 +55,7 @@ self.addEventListener("fetch", event => {
       .catch(() => {
         return caches.match(event.request)
           .then(cached => {
-            return cached || caches.match("./index.html");
+            return cached || caches.match("/index.html");
           });
       })
   );
